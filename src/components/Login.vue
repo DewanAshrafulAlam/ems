@@ -1,25 +1,36 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-100">
-    <div class="w-full max-w-md bg-white p-6 rounded shadow-md">
-      <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
-      <form @submit.prevent="login" class="space-y-4">
-        <!-- Email -->
-        <input
-          v-model="form.email"
-          type="email"
-          placeholder="Email"
-          class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+      <h1 class="text-xl text-red-600 text-center">THIS IS THE REAL LOGIN FILE</h1>
 
-        <!-- Password -->
-        <input
-          v-model="form.password"
-          type="password"
-          placeholder="Password"
-          class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-        />
+      <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+       <form @submit.prevent="handleLogin" class="space-y-4">
+        <div>
+          <label class="block mb-1">Email</label>
+          <input
+            v-model="email"
+            type="email"
+            class="w-full px-4 py-2 border rounded"
+            required
+          />
+        </div>
 
-        <!-- Login Button -->
+        <div>
+          <label class="block mb-1">Password</label>
+          <input
+            v-model="password"
+            type="password"
+            class="w-full px-4 py-2 border rounded"
+            required
+          />
+        </div>
+
+        <div class="text-right">
+          <router-link to="/forgot-password" class="text-blue-500 hover:underline text-sm">
+            Forgot password?
+          </router-link>
+        </div>
+
         <button
           type="submit"
           class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
@@ -27,25 +38,15 @@
           Login
         </button>
 
-        <!-- Forgot Password -->
-        <div class="text-center">
-          <router-link
-            to="/forgot-password"
-            class="text-sm text-blue-500 hover:underline"
-          >
-            Forgot password? Click here
+        <div class="text-center mt-4 text-sm">
+          Don't have an account?
+          <router-link to="/register" class="text-blue-500 hover:underline">
+            Register now
           </router-link>
         </div>
 
-        <!-- Register Link -->
-        <div class="text-center mt-2">
-          <span class="text-sm text-gray-600">Don't have an account? </span>
-          <router-link
-            to="/register"
-            class="text-sm text-blue-500 hover:underline"
-          >
-            Register here
-          </router-link>
+        <div v-if="error" class="text-red-600 mt-2 text-sm text-center">
+          {{ error }}
         </div>
       </form>
     </div>
@@ -54,30 +55,37 @@
 
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
+import api from '@/api'
 import { useRouter } from 'vue-router'
-import api from '../api'
 
+const email = ref('')
+const password = ref('')
+const error = ref('')
 const router = useRouter()
 
-const form = ref({
-  email: '',
-  password: ''
-})
+console.log('✅ Login component loaded') // Debug log
 
-const login = async () => {
+const handleLogin = async () => {
+  console.log('✅ Login clicked') // Debug log
+
+  error.value = ''
   try {
-    const res = await api.post('/login', form.value)
+    await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
+      withCredentials: true,
+    })
 
-    // Store token in localStorage
-    localStorage.setItem('token', res.data.token)
+    const response = await api.post('/login', {
+      email: email.value,
+      password: password.value,
+    })
 
-    // Set token for future requests
-    api.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`
-
-    // ✅ Redirect to dashboard after successful login
-    router.push('/dashboard/employees')
+    localStorage.setItem('token', response.data.token)
+    localStorage.setItem('userRole', response.data.user.role.toLowerCase())
+    router.push('/dashboard')
   } catch (err) {
-    alert('Login failed')
+    error.value = err.response?.data?.message || 'Login failed'
+    console.error('Login error:', err)
   }
 }
 </script>

@@ -12,11 +12,32 @@
     <!-- Body: Sidebar + Main Content -->
     <div class="flex flex-1">
       <!-- Sidebar -->
-      <aside class="w-64 p-4 bg-green-600 text-white space-y-4">
-        <router-link to="/dashboard/employees/create" class="block hover:underline">Employee Form</router-link>
-        <router-link to="/dashboard/employees" class="block hover:underline">Employee List</router-link>
-      </aside>
+<aside class="w-64 p-4 bg-green-600 text-white space-y-4">
 
+  <!-- Employee Links (for all roles) -->
+  <router-link v-if="role === 'user' || role === 'admin'" to="/dashboard/employees/create" class="block hover:underline">
+    Employee Form
+  </router-link>
+  <router-link to="/dashboard/employees" class="block hover:underline">
+    Employee List
+  </router-link>
+
+  <!-- User Management Main Section -->
+  <div v-if="role === 'admin'">
+    <div class="font-semibold text-white">User Management</div>
+    <router-link to="/dashboard/user-management/pending" class="block ml-4 text-blue-200 hover:underline">
+      Pending Users
+    </router-link>
+    <router-link
+  :to="{ path: '/dashboard/user-management/approved', query: { t: Date.now() } }"
+  class="block ml-4 text-green-200 hover:underline"
+>
+  Approved Users
+</router-link>
+
+  </div>
+
+</aside>
       <!-- Main Area -->
       <main class="flex-1 p-6 bg-white">
         <router-view />
@@ -29,6 +50,8 @@ import { useRouter } from 'vue-router'
 import api from '../api'
 
 const router = useRouter()
+
+const role = localStorage.getItem('userRole')
 
 const logout = async () => {
   await api.post('/logout')
