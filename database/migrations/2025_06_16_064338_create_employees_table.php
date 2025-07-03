@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('designation');
             $table->string('organization');
+            $table->string('email');
+            $table->string('mobile');
             $table->timestamps();
         });
     }

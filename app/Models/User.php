@@ -11,7 +11,8 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    protected $fillable = ['name', 'email', 'password'];
+    protected $fillable = ['name', 'email', 'password', 'role', 'is_approved'];
+
 
     /**
      * Override default password reset notification.

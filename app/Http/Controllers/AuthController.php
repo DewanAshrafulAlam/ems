@@ -14,30 +14,32 @@ use Illuminate\Support\Str;
 class AuthController extends Controller
 {
     public function register(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
+{
+   $request->validate([
+    'name' => 'required|string|max:255',
+    'email' => 'required|string|email|unique:users,email',
+    'password' => 'required|string|min:6|confirmed',
+    'role' => 'in:admin,user' // ✅ validate allowed roles
+    ]);
 
-        Log::info('Register request data: ', $request->all());
+    $user = User::create([
+    'name' => $request->name,
+    'email' => $request->email,
+    'password' => bcrypt($request->password),
+    'role' => $request->role ?? 'user',
+    'is_approved' => false,
+]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
 
-        Log::info('User created:', ['id' => $user->id]);
+    Log::info('User created:', ['id' => $user->id]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+    $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'token' => $token,
-            'user' => $user,
-        ], 201);
-    }
+    return response()->json([
+        'token' => $token,
+        'user' => $user,
+    ], 201);
+}
 
     public function login(Request $request)
     {
@@ -54,9 +56,22 @@ class AuthController extends Controller
             ]);
         }
 
+    if (!$user->is_approved) {
+        return response()->json(['message' => 'Your account is pending approval'], 403);
+    }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json(['token' => $token, 'user' => $user]);
+       return response()->json([
+    'token' => $token,
+    'user' => [
+        'id' => $user->id,
+        'name' => $user->name,
+        'email' => $user->email,
+        'role' => $user->role,
+    ]
+]);
+
     }
 
     public function logout(Request $request)
